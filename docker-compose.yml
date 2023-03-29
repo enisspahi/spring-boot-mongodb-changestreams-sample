@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:4.4
+    restart: always
+    container_name: mongodb
+    ports:
+      - 27017:27017
+    networks:
+      - mongo-network
+    volumes:
+      - mongodb4_data:/data/db
+      - ./:/opt/keyfile/
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: username
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: orders
+      MONGO_USERNAME: username
+      MONGO_PASSWORD: password
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongo -u username -p password --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
+    command: ["--replSet", "rs0", "--bind_ip_all", "--keyFile", "/opt/keyfile/keyfile"]
+
+volumes:
+  mongodb4_data:
+
+networks:
+  mongo-network:
+    driver: bridge
