@@ -25,13 +25,7 @@ class InvoiceProcessor(val mailSender: JavaMailSender,
 
     private val logger = LoggerFactory.getLogger(InvoiceProcessor::class.java)
 
-    private val retryConfig: RetryConfig =
-            RetryConfig.custom<RetryConfig>()
-                    .maxAttempts(10)
-                    .waitDuration(Duration.ofSeconds(5))
-                    .build()
-
-    private var retry: Retry = Retry.of("InvoiceService", retryConfig)
+    private var retry: Retry = Retry.of("InvoiceProcessor", RETRY_CONFIG)
 
     val stream = Flux.from(streamOffsetRepository.findById(OFFSET_NAME).map { it.value }.switchIfEmpty(Mono.just(NO_OFFSET)))
             .flatMap {
@@ -67,7 +61,13 @@ class InvoiceProcessor(val mailSender: JavaMailSender,
 
     companion object {
         private val NO_OFFSET: BsonTimestamp = BsonTimestamp()
-        private const val OFFSET_NAME = "InvoiceServiceOffset"
+        private const val OFFSET_NAME = "InvoiceProcessorOffset"
+
+        private val RETRY_CONFIG: RetryConfig =
+                RetryConfig.custom<RetryConfig>()
+                        .maxAttempts(10)
+                        .waitDuration(Duration.ofSeconds(3))
+                        .build()
     }
 
 }
