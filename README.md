@@ -8,4 +8,5 @@ while (true){
       print(myCursor.next());
    }
 }
+myCursor.close()
 ````
