@@ -11,6 +11,7 @@ import org.bson.BsonTimestamp
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.ChangeStreamEvent
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Component
@@ -31,6 +32,7 @@ class InvoiceProcessor(val mailSender: JavaMailSender,
             .flatMap {
                 reactiveTemplate.changeStream(OrderEntity::class.java)
                         .watchCollection("orders")
+                        .filter(Criteria.where("operationType").`in`("insert"))
                         .resumeAt(it)
                         .listen()
             }
@@ -40,9 +42,7 @@ class InvoiceProcessor(val mailSender: JavaMailSender,
 
     @PostConstruct
     fun initialize() {
-        stream.subscribe {
-            logger.info("Consumed $it")
-        }
+         stream.subscribe { logger.info("Consumed $it") }
     }
 
     fun onEvent(event: ChangeStreamEvent<OrderEntity>): ChangeStreamEvent<OrderEntity> {
